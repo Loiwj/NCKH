@@ -39,8 +39,8 @@ transform = transforms.Compose([
 ])
 
 # Load datasets
-train_dataset = ChickenDataset(image_dir='D:/Code/Determining sex in animal husbandry/Detect chicken sex.v4i.yolov8/train/images', label_dir='D:/Code/Determining sex in animal husbandry/Detect chicken sex.v4i.yolov8/train/labels', transform=transform)
-valid_dataset = ChickenDataset(image_dir='D:/Code/Determining sex in animal husbandry/Detect chicken sex.v4i.yolov8/valid/images', label_dir='D:/Code/Determining sex in animal husbandry/Detect chicken sex.v4i.yolov8/valid/labels', transform=transform)
+train_dataset = ChickenDataset(image_dir='./Detect chicken sex.v4i.yolov8/train/images', label_dir='./Detect chicken sex.v4i.yolov8/train/labels', transform=transform)
+valid_dataset = ChickenDataset(image_dir='./Detect chicken sex.v4i.yolov8/valid/images', label_dir='./Detect chicken sex.v4i.yolov8/valid/labels', transform=transform)
 
 # Create data loaders
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
