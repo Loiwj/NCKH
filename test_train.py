@@ -21,15 +21,22 @@ class ChickenDataset(Dataset):
         label_name = os.path.join(self.label_dir, self.images[idx].replace('.jpg', '.txt'))
         image = Image.open(img_name)
         
-        # Đọc file nhãn và lấy thông tin nhãn (giả sử nhãn là số nguyên đầu tiên trong file)
-        with open(label_name, 'r') as f:
-            label_line = f.readline().strip()
-            label_parts = label_line.split()
-            label = int(label_parts[0])  # Lấy phần tử đầu tiên và chuyển đổi nó thành int
+        label = 0  # Giá trị mặc định nếu nhãn không đọc được
+        try:
+            with open(label_name, 'r') as f:
+                label_line = f.readline().strip()
+                label_parts = label_line.split()
+                if label_parts:  # Kiểm tra xem có dữ liệu trong label_parts không
+                    label = int(label_parts[0])
+        except FileNotFoundError:
+            print(f"Không tìm thấy file nhãn: {label_name}")
+        except ValueError:
+            print(f"Định dạng nhãn không đúng trong file: {label_name}")
 
         if self.transform:
             image = self.transform(image)
         return image, torch.tensor(label)
+
 
 # Define transformations
 transform = transforms.Compose([
