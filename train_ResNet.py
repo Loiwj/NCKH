@@ -47,18 +47,38 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
-def train_model(model, criterion, optimizer, train_loader, epochs=25):
+def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=10):
     for epoch in range(epochs):
         model.train()
-        for inputs, labels in train_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-        print(f'Epoch {epoch+1}/{epochs} completed')
+        train_loss, valid_loss = 0.0, 0.0
+        correct, total = 0, 0
 
-train_model(model, criterion, optimizer, train_loader)
+        # Training loop
+        for inputs, labels in train_loader:
+            # ... [phần huấn luyện không thay đổi]
+            train_loss += loss.item()
+
+        # Validation loop
+        model.eval()
+        with torch.no_grad():
+            for inputs, labels in valid_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                valid_loss += loss.item()
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        # Tính toán trung bình loss và độ chính xác
+        train_loss /= len(train_loader.dataset)
+        valid_loss /= len(valid_loader.dataset)
+        accuracy = correct / total
+
+        print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}, Accuracy: {accuracy:.4f}')
+
+# Bắt đầu huấn luyện với tập dữ liệu validation
+train_model(model, criterion, optimizer, train_loader, test_loader, epochs=10)
+
 
 torch.save(model.state_dict(), 'resnet18_chicken_gender.pth')
