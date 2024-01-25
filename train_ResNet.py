@@ -34,8 +34,8 @@ transform = transforms.Compose([
 ])
 
 # Load datasets
-train_dataset = ChickenDataset('./train', transform=transform)
-test_dataset = ChickenDataset('./test', transform=transform)
+train_dataset = ChickenDataset('./classifier/train', transform=transform)
+test_dataset = ChickenDataset('./classfier/test', transform=transform)
 
 # Create data loaders
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
