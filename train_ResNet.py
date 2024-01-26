@@ -32,8 +32,8 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-train_dataset = ChickenDataset('D:/Code/NCKH/classfier/train', transform=transform)
-test_dataset = ChickenDataset('D:/Code/NCKH/classfier/test', transform=transform)
+train_dataset = ChickenDataset('./classfier/train', transform=transform)
+test_dataset = ChickenDataset('./classfier/test', transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
@@ -47,18 +47,21 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
-def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=10):
+def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=25):
     for epoch in range(epochs):
         model.train()
         train_loss, valid_loss = 0.0, 0.0
         correct, total = 0, 0
 
-        # Training loop
         for inputs, labels in train_loader:
-            # ... [phần huấn luyện không thay đổi]
+            inputs, labels = inputs.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
             train_loss += loss.item()
 
-        # Validation loop
         model.eval()
         with torch.no_grad():
             for inputs, labels in valid_loader:
@@ -66,18 +69,16 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
                 valid_loss += loss.item()
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
+                _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
+                total += labels.size(0)
 
-        # Tính toán trung bình loss và độ chính xác
         train_loss /= len(train_loader.dataset)
         valid_loss /= len(valid_loader.dataset)
         accuracy = correct / total
-
         print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}, Accuracy: {accuracy:.4f}')
 
-# Bắt đầu huấn luyện với tập dữ liệu validation
+# Call to train_model
 train_model(model, criterion, optimizer, train_loader, test_loader, epochs=10)
 
 

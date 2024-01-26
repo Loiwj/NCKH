@@ -98,7 +98,7 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=
         print(f'Epoch {epoch+1}/{epochs} - Loss: {epoch_loss:.4f}, Acc: {epoch_acc:.4f}')
 
 # Start training
-train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=25)
+train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=10)
 
 # Save the model
 torch.save(model.state_dict(), 'vgg16_chicken_gender.pth')
