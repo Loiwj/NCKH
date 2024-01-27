@@ -4,7 +4,7 @@ from torchvision.models import vgg16, VGG16_Weights
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
-
+from sklearn.metrics import confusion_matrix, classification_report
 # Custom Dataset class
 class ChickenDataset(Dataset):
     def __init__(self, image_dir, label_dir, transform=None):
@@ -95,7 +95,23 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=
 
         epoch_loss = running_loss / len(train_loader)
         epoch_acc = correct / total
-        print(f'Epoch {epoch+1}/{epochs} - Loss: {epoch_loss:.4f}, Acc: {epoch_acc:.4f}')
+        print(f'Epoch {epoch+1}/{epochs} - Loss: {epoch_loss:.5f}, Acc: {epoch_acc:.5f}')
+        y_true = []
+        y_pred = []
+        with torch.no_grad():
+            for inputs, labels in valid_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs, 1)
+                y_true.extend(labels.cpu().numpy())
+                y_pred.extend(predicted.cpu().numpy())
+
+        cm = confusion_matrix(y_true, y_pred)
+        report = classification_report(y_true, y_pred, digits=5)
+        print("Confusion Matrix:")
+        print(cm)
+        print("Classification Report:")
+        print(report)
 
 # Start training
 train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=10)

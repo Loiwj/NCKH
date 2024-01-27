@@ -4,7 +4,7 @@ from torchvision.models import resnet18
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
-
+from sklearn.metrics import confusion_matrix, classification_report
 class ChickenDataset(Dataset):
     def __init__(self, image_dir, transform=None):
         self.transform = transform
@@ -76,8 +76,23 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=
         train_loss /= len(train_loader.dataset)
         valid_loss /= len(valid_loader.dataset)
         accuracy = correct / total
-        print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}, Accuracy: {accuracy:.4f}')
+        print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.5f}, Valid Loss: {valid_loss:.5f}, Accuracy: {accuracy:.5f}')
+        y_true = []
+        y_pred = []
+        with torch.no_grad():
+            for inputs, labels in valid_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs, 1)
+                y_true.extend(labels.cpu().numpy())
+                y_pred.extend(predicted.cpu().numpy())
 
+        cm = confusion_matrix(y_true, y_pred)
+        report = classification_report(y_true, y_pred, digits=5)
+        print("Confusion Matrix:")
+        print(cm)
+        print("Classification Report:")
+        print(report)
 # Call to train_model
 train_model(model, criterion, optimizer, train_loader, test_loader, epochs=10)
 
