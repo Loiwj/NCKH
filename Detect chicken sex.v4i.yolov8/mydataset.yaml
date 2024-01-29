@@ -1,7 +1,0 @@
-train: "./Detect chicken sex.v4i.yolov8/train"
-test: "./Detect chicken sex.v4i.yolov8/test"
-valid: "./Detect chicken sex.v4i.yolov8/valid" 
-nc: 2
-name: 
-  0: cook
-  1: hen
