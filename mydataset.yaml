@@ -1,7 +1,0 @@
-names:
-  - cook
-  - hen
-nc: 2
-train: ./NCKH/Detect_chicken_sex/train
-test: ./NCKH/Detect_chicken_sex/test
-val: ./NCKH/Detect_chicken_sex/valid

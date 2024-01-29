@@ -1,4 +1,4 @@
-path: ../datasets/roboflow
+path: ../Detect_chicken_sex
 
 train: train/images
 val: valid/images
