@@ -1,7 +1,7 @@
-train: "./NCKH/Detect chicken sex.v4i.yolov8/train"
-test: "./NCKH/Detect chicken sex.v4i.yolov8/test"
-valid: "./NCKH/Detect chicken sex.v4i.yolov8/valid" 
+names:
+  - cook
+  - hen
 nc: 2
-name: 
-  0: cook
-  1: hen
+train: ./NCKH/Detect_chicken_sex/train
+test: ./NCKH/Detect_chicken_sex/test
+val: ./NCKH/Detect_chicken_sex/valid
