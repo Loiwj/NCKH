@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 2
+names: ['cook', 'hen']
+
+roboflow:
+  workspace: chicken-detection-9hgx2
+  project: detect-chicken-sex
+  version: 5
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/chicken-detection-9hgx2/detect-chicken-sex/dataset/5
