@@ -48,10 +48,10 @@ transform = transforms.Compose([
 ])
 
 train_dataset = ChickenDataset('./Detect_chicken_sex_V2/train', transform=transform)
-valid_dataset = ChickenDataset('./Detect_chicken_sex_V2/valid', transform=transform)
+test_dataset = ChickenDataset('./Detect_chicken_sex_V2/test', transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-valid_loader = DataLoader(valid_dataset, batch_size=32)
+test_loader = DataLoader(test_dataset, batch_size=32)
 
 model = models.resnet18(pretrained=True)
 model.fc = torch.nn.Sequential(
@@ -67,14 +67,14 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
-def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=25, log_file='training_log.csv'):
+def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25, log_file='training_log.csv'):
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Epoch', 'Train Loss', 'Valid Loss', 'Accuracy', 'Precision', 'Recall', 'F1-Score'])
+        writer.writerow(['Epoch', 'Train Loss', 'Test Loss', 'Accuracy', 'Precision', 'Recall', 'F1-Score'])
 
     for epoch in range(epochs):
         model.train()
-        train_loss, valid_loss = 0.0, 0.0
+        train_loss, test_loss = 0.0, 0.0
         correct, total = 0, 0
         y_true, y_pred = [], []
 
@@ -89,11 +89,11 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=
 
         model.eval()
         with torch.no_grad():
-            for inputs, labels in valid_loader:
+            for inputs, labels in test_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
-                valid_loss += loss.item()
+                test_loss += loss.item()
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
@@ -101,9 +101,9 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=
                 y_pred.extend(predicted.cpu().numpy())
 
         train_loss /= len(train_loader.dataset)
-        valid_loss /= len(valid_loader.dataset)
+        test_loss /= len(test_loader.dataset)
         accuracy = correct / total
-        print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.5f}, Valid Loss: {valid_loss:.5f}, Accuracy: {accuracy:.5f}')
+        print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.5f}, Test Loss: {test_loss:.5f}, Accuracy: {accuracy:.5f}')
 
         cm = confusion_matrix(y_true, y_pred)
         report = classification_report(y_true, y_pred, digits=5, output_dict=True)
@@ -117,7 +117,7 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=
         print(report)
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([epoch+1, train_loss, valid_loss, accuracy, precision, recall, f1_score])
+            writer.writerow([epoch+1, train_loss, test_loss, accuracy, precision, recall, f1_score])
 
 # Gọi hàm train_model
-train_model(model, criterion, optimizer, train_loader, valid_loader, epochs=10)
+train_model(model, criterion, optimizer, train_loader, test_loader, epochs=10)
