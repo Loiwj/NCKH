@@ -7,6 +7,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 import csv
 import numpy as np
 from torchvision import models
+import random
 
 class ChickenDataset(Dataset):
     def __init__(self, root_dir, transform=None):
@@ -33,12 +34,15 @@ class ChickenDataset(Dataset):
         image_path = self.image_paths[idx]
         image = Image.open(image_path).convert('RGB')
         label = self.labels[idx]
+
         if self.transform:
             image = self.transform(image)
+
         return image, torch.tensor(label, dtype=torch.long)
 
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.RandomResizedCrop(224),
+    transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
@@ -50,7 +54,12 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 valid_loader = DataLoader(valid_dataset, batch_size=32)
 
 model = models.resnet18(pretrained=True)
-model.fc = torch.nn.Linear(model.fc.in_features, 2)
+model.fc = torch.nn.Sequential(
+    torch.nn.Linear(model.fc.in_features, 512),
+    torch.nn.ReLU(),
+    torch.nn.Dropout(0.5),
+    torch.nn.Linear(512, 2)
+)
 
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
