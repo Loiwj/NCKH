@@ -138,3 +138,4 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
 
 # Gọi hàm train_model
 train_model(model, criterion, optimizer, train_loader, test_loader, epochs=50)
+torch.save(model.state_dict(), 'resnet18_chicken_gender.pth')
