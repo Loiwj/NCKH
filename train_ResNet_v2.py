@@ -35,11 +35,6 @@ class ChickenDataset(Dataset):
             image = self.transform(image)
         return image, torch.tensor(label, dtype=torch.long)
 
-    def _load_label(self, label_path):
-        with open(label_path, 'r') as file:
-            label = [float(x) for x in file.read().strip().split()]
-        return torch.tensor(label, dtype=torch.float32)
-    
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),  # Resize the images to a fixed size
@@ -122,6 +117,6 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         
 
 # Call to train_model
-train_model(model, criterion, optimizer, train_loader, test_loader, epochs=10)
+train_model(model, criterion, optimizer, train_loader, test_loader, epochs=50)
 
 torch.save(model.state_dict(), 'resnet18_chicken_gender.pth')

@@ -67,14 +67,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
-def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25, log_file='training_log.csv', early_stopping_patience=5):
+def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25, log_file='training_log.csv'):
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Epoch', 'Train Loss', 'Test Loss', 'Accuracy', 'Precision', 'Recall', 'F1-Score'])
-
-    best_test_loss = float('inf')
-    best_epoch = 0
-    no_improvement_count = 0
 
     for epoch in range(epochs):
         model.train()
@@ -122,19 +118,6 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss, accuracy, precision, recall, f1_score])
-
-        # Kiểm tra early stopping
-        if test_loss < best_test_loss:
-            best_test_loss = test_loss
-            best_epoch = epoch
-            no_improvement_count = 0
-        else:
-            no_improvement_count += 1
-            if no_improvement_count >= early_stopping_patience:
-                print(f'Early stopping at epoch {epoch+1} - Best Test Loss: {best_test_loss:.5f}')
-                break
-
-    print(f'Best Test Loss: {best_test_loss:.5f} at epoch {best_epoch+1}')
 
 # Gọi hàm train_model
 train_model(model, criterion, optimizer, train_loader, test_loader, epochs=50)

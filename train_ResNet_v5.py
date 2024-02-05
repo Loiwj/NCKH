@@ -1,10 +1,13 @@
 import torch
-from torchvision import transforms, models
+import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
 from sklearn.metrics import confusion_matrix, classification_report
 import csv
+import numpy as np
+from torchvision import models
+import random
 
 class ChickenDataset(Dataset):
     def __init__(self, root_dir, transform=None):
@@ -30,11 +33,12 @@ class ChickenDataset(Dataset):
     def __getitem__(self, idx):
         image_path = self.image_paths[idx]
         image = Image.open(image_path).convert('RGB')
-        label = self.labels[idx]  # Đã được sửa đổi ở trên
+        label = self.labels[idx]
+
         if self.transform:
             image = self.transform(image)
-        return image, torch.tensor(label, dtype=torch.long)
 
+        return image, torch.tensor(label, dtype=torch.long)
 
 transform = transforms.Compose([
     transforms.RandomResizedCrop(224),
@@ -43,14 +47,19 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-train_dataset = ChickenDataset('./Detect_chicken_sex/train', transform=transform)
-test_dataset = ChickenDataset('./Detect_chicken_sex/test', transform=transform)
+train_dataset = ChickenDataset('./Detect_chicken_sex_V2/train', transform=transform)
+test_dataset = ChickenDataset('./Detect_chicken_sex_V2/test', transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
 
 model = models.resnet18(pretrained=True)
-model.fc = torch.nn.Linear(model.fc.in_features, 2)
+model.fc = torch.nn.Sequential(
+    torch.nn.Linear(model.fc.in_features, 512),
+    torch.nn.ReLU(),
+    torch.nn.Dropout(0.5),
+    torch.nn.Linear(512, 2)
+)
 
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -58,15 +67,20 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
-def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25,log_file='training_log.csv'):
+def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25, log_file='training_log.csv', early_stopping_patience=5):
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Epoch', 'Train Loss', 'Test Loss', 'Accuracy', 'Precision', 'Recall', 'F1-Score'])
-        
+
+    best_test_loss = float('inf')
+    best_epoch = 0
+    no_improvement_count = 0
+
     for epoch in range(epochs):
         model.train()
         train_loss, test_loss = 0.0, 0.0
         correct, total = 0, 0
+        y_true, y_pred = [], []
 
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
@@ -87,20 +101,13 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
                 _, predicted = torch.max(outputs, 1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
+                y_true.extend(labels.cpu().numpy())
+                y_pred.extend(predicted.cpu().numpy())
 
         train_loss /= len(train_loader.dataset)
         test_loss /= len(test_loader.dataset)
         accuracy = correct / total
-        print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.5f}, test Loss: {test_loss:.5f}, Accuracy: {accuracy:.5f}')
-        y_true = []
-        y_pred = []
-        with torch.no_grad():
-            for inputs, labels in test_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs)
-                _, predicted = torch.max(outputs, 1)
-                y_true.extend(labels.cpu().numpy())
-                y_pred.extend(predicted.cpu().numpy())
+        print(f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.5f}, Test Loss: {test_loss:.5f}, Accuracy: {accuracy:.5f}')
 
         cm = confusion_matrix(y_true, y_pred)
         report = classification_report(y_true, y_pred, digits=5, output_dict=True)
@@ -115,9 +122,19 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss, accuracy, precision, recall, f1_score])
-        
 
-# Call to train_model
+        # Kiểm tra early stopping
+        if test_loss < best_test_loss:
+            best_test_loss = test_loss
+            best_epoch = epoch
+            no_improvement_count = 0
+        else:
+            no_improvement_count += 1
+            if no_improvement_count >= early_stopping_patience:
+                print(f'Early stopping at epoch {epoch+1} - Best Test Loss: {best_test_loss:.5f}')
+                break
+
+    print(f'Best Test Loss: {best_test_loss:.5f} at epoch {best_epoch+1}')
+
+# Gọi hàm train_model
 train_model(model, criterion, optimizer, train_loader, test_loader, epochs=50)
-
-torch.save(model.state_dict(), 'resnet18_chicken_gender.pth')
