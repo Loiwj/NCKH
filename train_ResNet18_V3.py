@@ -43,8 +43,8 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-train_dataset = ChickenDataset('./Detect_chicken_sex/train', transform=transform)
-test_dataset = ChickenDataset('./Detect_chicken_sex/test', transform=transform)
+train_dataset = ChickenDataset('./Detect_chicken_sex_V2/train', transform=transform)
+test_dataset = ChickenDataset('./Detect_chicken_sex_V2/test', transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
