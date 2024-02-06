@@ -9,43 +9,36 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 
 class ChickenDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, image_dir, transform=None):
         self.transform = transform
-        self.image_paths = []
-        self.labels = []
-
-        image_dir = os.path.join(root_dir, 'images')
-        label_dir = os.path.join(root_dir, 'labels')
-
-        for label_name in os.listdir(label_dir):
-            label_path = os.path.join(label_dir, label_name)
-            with open(label_path, 'r') as file:
-                label = [float(x) for x in file.read().strip().split()]
-            if label:
-                self.labels.append(label[0])
-                image_path = os.path.join(image_dir, label_name.replace('.txt', '.jpg'))
-                self.image_paths.append(image_path)
+        self.images = []
+        for root, _, files in os.walk(image_dir):
+            for file in files:
+                if file.endswith('.jpg'):
+                    self.images.append(os.path.join(root, file))
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.images)
 
     def __getitem__(self, idx):
-        image_path = self.image_paths[idx]
-        image = Image.open(image_path).convert('RGB')
-        label = self.labels[idx]  # Đã được sửa đổi ở trên
+        img_path = self.images[idx]
+        image = Image.open(img_path).convert("RGB")
+        label = img_path.split('/')[-2]  # Tên thư mục là nhãn
+        label = 1 if label == 'cock' else 0
         if self.transform:
             image = self.transform(image)
         return image, torch.tensor(label, dtype=torch.long)
 
 
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.RandomResizedCrop(224),
+    transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-train_dataset = ChickenDataset('./Detect_chicken_sex_V2/train', transform=transform)
-test_dataset = ChickenDataset('./Detect_chicken_sex_V2/test', transform=transform)
+train_dataset = ChickenDataset('./classfier/train', transform=transform)
+test_dataset = ChickenDataset('./classfier/test', transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
