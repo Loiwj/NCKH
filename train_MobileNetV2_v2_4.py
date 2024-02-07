@@ -51,13 +51,12 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 model = mobilenet_v2(pretrained=True)
-model.fc = torch.nn.Sequential(
-    torch.nn.Linear(model.fc.in_features, 512),
+model.classifier = torch.nn.Sequential(
+    torch.nn.Linear(model.classifier[1].in_features, 512),
     torch.nn.ReLU(),
     torch.nn.Dropout(0.5),
     torch.nn.Linear(512, 2)
 )
-
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
