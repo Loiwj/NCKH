@@ -41,8 +41,8 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 model = resnet18(pretrained=True)
-model.classifier = torch.nn.Sequential(
-    torch.nn.Linear(model.classifier[1].in_features, 512),
+model.fc = torch.nn.Sequential(
+    torch.nn.Linear(model.fc.in_features, 512),
     torch.nn.ReLU(),
     torch.nn.Dropout(0.5),
     torch.nn.Linear(512, 2)
