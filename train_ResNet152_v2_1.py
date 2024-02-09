@@ -5,7 +5,12 @@ from torch.utils.data import DataLoader, Dataset
 from PIL import Image
 import os
 import csv
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    matthews_corrcoef,
+    cohen_kappa_score,
+)
 
 class ChickenDataset(Dataset):
     def __init__(self, root_dir, transform=None):
@@ -49,7 +54,7 @@ valid_dataset = ChickenDataset('./Detect_chicken_sex/valid', transform=transform
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32)
-valid_dataset = DataLoader(valid_dataset, batch_size=32)
+valid_loader = DataLoader(valid_dataset, batch_size=32)
 
 model = resnet152(pretrained=True)
 num_ftrs = model.fc.in_features
@@ -64,8 +69,8 @@ model.to(device)
 def train_model(model, criterion, optimizer, train_loader, valid_loader, test_loader, epochs=25, log_file='training_log.csv'):
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Epoch', 'Train Loss', 'Valid Loss', 'Test Loss',
-                        'Accuracy', 'Precision', 'Recall', 'F1-Score'])
+        writer.writerow(['Epoch', 'Train Loss', 'Valid Loss', 'Test Loss', 'Accuracy', 'Precision', 'Recall', 'F1-Score',
+                        'Confusion Matrix', 'Classification Report', 'Matthews Corrcoef', 'Cohen Kappa Score'])
 
     for epoch in range(epochs):
         model.train()
@@ -115,21 +120,24 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, test_lo
                 y_pred.extend(predicted.cpu().numpy())
 
         cm = confusion_matrix(y_true, y_pred)
-        report = classification_report(
-            y_true, y_pred, digits=5, output_dict=True)
+        report = classification_report(y_true, y_pred, digits=5, output_dict=True)
         accuracy = report['accuracy']
         precision = report['macro avg']['precision']
         recall = report['macro avg']['recall']
         f1_score = report['macro avg']['f1-score']
+        matthews = matthews_corrcoef(y_true, y_pred)
+        cohen_kappa = cohen_kappa_score(y_true, y_pred)
+
         print("Confusion Matrix:")
         print(cm)
         print("Classification Report:")
         print(report)
+
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([epoch+1, train_loss, valid_loss, test_loss,
-                            accuracy, precision, recall, f1_score])
+            writer.writerow([epoch+1, train_loss, valid_loss, test_loss, accuracy, precision,
+                            recall, f1_score, cm.tolist(), report, matthews, cohen_kappa])
 # Call to train_model
-train_model(model, criterion, optimizer, train_loader, test_loader, epochs=50)
+train_model(model, criterion, optimizer, train_loader, valid_loader, test_loader, epochs=100)
 
 torch.save(model.state_dict(), 'resnet152_chicken_gender.pth')
