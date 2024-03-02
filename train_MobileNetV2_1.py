@@ -6,6 +6,9 @@ from PIL import Image
 import os
 import csv
 from sklearn.metrics import confusion_matrix, classification_report
+import pandas as pd 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class ChickenDataset(Dataset):
@@ -113,6 +116,16 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss,
                             accuracy, precision, recall, f1_score])
+        cm_df = pd.DataFrame(cm, 
+                            index=['cock', 'hen'],  
+                            columns=['cock', 'hen'])
+
+        plt.figure(figsize=(5,4))
+        sns.heatmap(cm_df, annot=True)
+        plt.title('Confusion Matrix')
+        plt.ylabel('Actual Values') 
+        plt.xlabel('Predicted Values')
+        plt.show()
 
 
 # Call to train_model
