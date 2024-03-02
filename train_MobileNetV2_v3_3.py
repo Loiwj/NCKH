@@ -79,7 +79,7 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, test_lo
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Epoch', 'Train Loss', 'Valid Loss', 'Test Loss', 'Accuracy', 'Precision', 'Recall', 'F1-Score',
-                        'Confusion Matrix', 'Classification Report', 'Matthews Corrcoef', 'Cohen Kappa Score'])
+                        'Confusion Matrix', 'Classification Report'])
 
     for epoch in range(epochs):
         model.train()
@@ -137,15 +137,10 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, test_lo
         matthews = matthews_corrcoef(y_true, y_pred)
         cohen_kappa = cohen_kappa_score(y_true, y_pred)
 
-        print("Confusion Matrix:")
-        print(cm)
-        print("Classification Report:")
-        print(report)
-
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, valid_loss, test_loss, accuracy, precision,
-                            recall, f1_score, cm.tolist(), report, matthews, cohen_kappa])
+                            recall, f1_score, cm.tolist(), report])
 
 
 # Call to train_model

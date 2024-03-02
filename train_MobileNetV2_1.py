@@ -6,9 +6,6 @@ from PIL import Image
 import os
 import csv
 from sklearn.metrics import confusion_matrix, classification_report
-import pandas as pd 
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 class ChickenDataset(Dataset):
@@ -59,7 +56,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Epoch', 'Train Loss', 'Test Loss',
-                        'Accuracy', 'Precision', 'Recall', 'F1-Score'])
+                        'Accuracy', 'Precision', 'Recall', 'F1-Score', 'Confusion Matrix', 'Classification Report'])
 
     for epoch in range(epochs):
         model.train()
@@ -89,8 +86,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         train_loss /= len(train_loader.dataset)
         test_loss /= len(test_loader.dataset)
         accuracy = correct / total
-        print(
-            f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.5f}, test Loss: {test_loss:.5f}, Accuracy: {accuracy:.5f}')
+
         y_true = []
         y_pred = []
         with torch.no_grad():
@@ -108,24 +104,12 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         precision = report['macro avg']['precision']
         recall = report['macro avg']['recall']
         f1_score = report['macro avg']['f1-score']
-        print("Confusion Matrix:")
-        print(cm)
-        print("Classification Report:")
-        print(report)
+
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss,
-                            accuracy, precision, recall, f1_score])
-        cm_df = pd.DataFrame(cm, 
-                            index=['cock', 'hen'],  
-                            columns=['cock', 'hen'])
+                            accuracy, precision, recall, f1_score, cm, report])
 
-        plt.figure(figsize=(5,4))
-        sns.heatmap(cm_df, annot=True)
-        plt.title('Confusion Matrix')
-        plt.ylabel('Actual Values') 
-        plt.xlabel('Predicted Values')
-        plt.show()
 
 
 # Call to train_model

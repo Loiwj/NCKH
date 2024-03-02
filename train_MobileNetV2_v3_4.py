@@ -73,7 +73,7 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, test_lo
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Epoch', 'Train Loss', 'Valid Loss', 'Test Loss',
-                        'Accuracy', 'Precision', 'Recall', 'F1-Score'])
+                        'Accuracy', 'Precision', 'Recall', 'F1-Score', 'Confusion Matrix', 'Classification Report'])
         
     best_test_loss = float('inf')
     best_epoch = 0
@@ -140,7 +140,7 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, test_lo
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, valid_loss, test_loss,
-                            accuracy, precision, recall, f1_score])
+                            accuracy, precision, recall, f1_score, cm, report])
 # Kiểm tra early stopping
         if test_loss < best_test_loss:
             best_test_loss = test_loss
