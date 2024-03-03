@@ -120,6 +120,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         print(cm)
         print("Classification Report:")
         print(report)
+        cm = str(cm).replace('\n', ' ')
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss,

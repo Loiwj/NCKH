@@ -136,7 +136,7 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, test_lo
         f1_score = report['macro avg']['f1-score']
         matthews = matthews_corrcoef(y_true, y_pred)
         cohen_kappa = cohen_kappa_score(y_true, y_pred)
-
+        cm = str(cm).replace('\n', ' ')
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, valid_loss, test_loss, accuracy, precision,
