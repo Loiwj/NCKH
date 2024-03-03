@@ -105,7 +105,8 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         precision = report['macro avg']['precision']
         recall = report['macro avg']['recall']
         f1_score = report['macro avg']['f1-score']
-
+        print(f'Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.5f}, Test Loss: {test_loss:.5f}, Accuracy: {accuracy:.5f}, Precision: {precision:.5f}, Recall: {recall:.5f}, F1-Score: {f1_score:.5f}, Confusion Matrix: {cm}')
+        cm = str(cm).replace('\n', ' ')
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss,
