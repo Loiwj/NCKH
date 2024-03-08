@@ -66,7 +66,9 @@ model = model.to(device)
 
 
 def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25, log_file='training_log.csv'):
-    writer.writerow(['Epoch', 'Train Loss', 'Test Loss',
+    with open(log_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Epoch', 'Train Loss', 'Test Loss',
                         'Accuracy', 'Precision', 'Recall', 'F1-Score', 'Confusion Matrix', 'Classification Report'])
 
     for epoch in range(epochs):
@@ -125,7 +127,6 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss,
                             accuracy, precision, recall, f1_score, cm, report])
-
 
 # Call to train_model
 train_model(model, criterion, optimizer, train_loader, test_loader, epochs=50)
