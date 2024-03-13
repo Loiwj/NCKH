@@ -63,17 +63,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
 
-def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25, log_file='training_log.csv'):
+def train_model(model, criterion, optimizer, train_loader, valid_loader, test_loader, epochs=25, log_file='training_log.csv'):
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Epoch', 'Train Loss', 'Test Loss',
+        writer.writerow(['Epoch', 'Train Loss', 'Test Loss','Valid Loss',
                         'Test Accuracy', 'Test Precision', 'Test Recall', 'Test F1-Score',
                         'Train Accuracy', 'Train Precision', 'Train Recall', 'Train F1-Score',
-                        'Confusion Matrix', 'Classification Report'])
+                        'Valid Accuracy', 'Valid Precision', 'Valid Recall', 'Valid F1-Score',
+                        'Confusion Matrix'])
 
     for epoch in range(epochs):
         model.train()
-        train_loss, test_loss = 0.0, 0.0
+        train_loss, valid_loss, test_loss = 0.0, 0.0, 0.0
         correct_train, total_train = 0, 0
         correct_test, total_test = 0, 0
 
@@ -90,6 +91,16 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
             correct_train += (predicted == labels).sum().item()
             total_train += labels.size(0)
 
+        # Validation loop
+        model.eval()
+        with torch.no_grad():
+            for inputs, labels in valid_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                valid_loss += loss.item()
+
+        # Test loop
         model.eval()
         with torch.no_grad():
             for inputs, labels in test_loader:
@@ -103,6 +114,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
                 total_test += labels.size(0)
 
         train_loss /= len(train_loader.dataset)
+        valid_loss /= len(valid_loader.dataset)
         test_loss /= len(test_loader.dataset)
 
         train_accuracy = correct_train / total_train
@@ -150,11 +162,9 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss,
-                            test_accuracy, test_precision, test_recall, test_f1_score,
+                            valid_loss, test_accuracy, test_precision, test_recall, test_f1_score,
                             train_accuracy, train_precision, train_recall, train_f1_score,
-                            cm_test, cm_train])
-
-
+                            cm_test])
 # Call to train_model
 train_model(model, criterion, optimizer, train_loader, valid_loader, test_loader, epochs=50)
 
