@@ -46,7 +46,13 @@ transform = transforms.Compose([
 ])
 
 train_dataset = ChickenDataset('./Detect_chicken_sex/train', transform=transform)
-test_dataset = ChickenDataset('./Detect_chicken_sex/test', transform=transform)
+test_transform = transforms.Compose([
+    transforms.Resize((224, 224)),  # Resize all images to have the same size
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+test_dataset = ChickenDataset('./Detect_chicken_sex/test', transform=test_transform)
 valid_dataset = ChickenDataset('./Detect_chicken_sex/valid', transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)

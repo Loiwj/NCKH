@@ -38,7 +38,13 @@ transform = transforms.Compose([
 ])
 
 train_dataset = ChickenDataset('./classfier/train', transform=transform)
-test_dataset = ChickenDataset('./classfier/test')
+test_transform = transforms.Compose([
+    transforms.Resize((224, 224)),  # Resize all images to have the same size
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+test_dataset = ChickenDataset('./classfier/test', transform=test_transform)
 
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
@@ -117,7 +123,6 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
             writer = csv.writer(file)
             writer.writerow([epoch+1, train_loss, test_loss,
                     accuracy, precision, recall, f1_score, cm, report])
-
 
 
 # Call to train_model
