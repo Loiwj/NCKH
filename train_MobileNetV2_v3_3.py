@@ -81,16 +81,19 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
 
-def train_model(model, criterion, optimizer, train_loader, valid_loader, test_loader, epochs=25, log_file='training_log.csv'):
+def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=25, log_file='training_log.csv'):
     with open(log_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Epoch', 'Train Loss', 'Valid Loss', 'Test Loss', 'Accuracy', 'Precision', 'Recall', 'F1-Score',
+        writer.writerow(['Epoch', 'Train Loss', 'Test Loss',
+                        'Test Accuracy', 'Test Precision', 'Test Recall', 'Test F1-Score',
+                        'Train Accuracy', 'Train Precision', 'Train Recall', 'Train F1-Score',
                         'Confusion Matrix', 'Classification Report'])
 
     for epoch in range(epochs):
         model.train()
-        train_loss, valid_loss, test_loss = 0.0, 0.0, 0.0
-        correct, total = 0, 0
+        train_loss, test_loss = 0.0, 0.0
+        correct_train, total_train = 0, 0
+        correct_test, total_test = 0, 0
 
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
@@ -101,56 +104,77 @@ def train_model(model, criterion, optimizer, train_loader, valid_loader, test_lo
             optimizer.step()
             train_loss += loss.item()
 
+            _, predicted = torch.max(outputs, 1)
+            correct_train += (predicted == labels).sum().item()
+            total_train += labels.size(0)
+
         model.eval()
         with torch.no_grad():
-            for inputs, labels in valid_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                valid_loss += loss.item()
-
             for inputs, labels in test_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
                 test_loss += loss.item()
+
                 _, predicted = torch.max(outputs, 1)
-                correct += (predicted == labels).sum().item()
-                total += labels.size(0)
+                correct_test += (predicted == labels).sum().item()
+                total_test += labels.size(0)
 
         train_loss /= len(train_loader.dataset)
-        valid_loss /= len(valid_loader.dataset)
         test_loss /= len(test_loader.dataset)
-        accuracy = correct / total
-        print(
-            f'Epoch {epoch+1}/{epochs} - Train Loss: {train_loss:.5f}, Valid Loss: {valid_loss:.5f}, Test Loss: {test_loss:.5f}, Accuracy: {accuracy:.5f}')
-        y_true = []
-        y_pred = []
+
+        train_accuracy = correct_train / total_train
+        test_accuracy = correct_test / total_test
+
+        y_true_test = []
+        y_pred_test = []
+        y_true_train = []
+        y_pred_train = []
+
         with torch.no_grad():
             for inputs, labels in test_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
                 outputs = model(inputs)
                 _, predicted = torch.max(outputs, 1)
-                y_true.extend(labels.cpu().numpy())
-                y_pred.extend(predicted.cpu().numpy())
+                y_true_test.extend(labels.cpu().numpy())
+                y_pred_test.extend(predicted.cpu().numpy())
 
-        cm = confusion_matrix(y_true, y_pred)
-        report = classification_report(y_true, y_pred, digits=5, output_dict=True)
-        accuracy = report['accuracy']
-        precision = report['macro avg']['precision']
-        recall = report['macro avg']['recall']
-        f1_score = report['macro avg']['f1-score']
-        matthews = matthews_corrcoef(y_true, y_pred)
-        cohen_kappa = cohen_kappa_score(y_true, y_pred)
-        cm = str(cm).replace('\n', ' ')
+            for inputs, labels in train_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs, 1)
+                y_true_train.extend(labels.cpu().numpy())
+                y_pred_train.extend(predicted.cpu().numpy())
+
+        cm_test = confusion_matrix(y_true_test, y_pred_test)
+        cm_train = confusion_matrix(y_true_train, y_pred_train)
+
+        report_test = classification_report(y_true_test, y_pred_test, digits=5, output_dict=True)
+        report_train = classification_report(y_true_train, y_pred_train, digits=5, output_dict=True)
+
+        test_precision = report_test['macro avg']['precision']
+        test_recall = report_test['macro avg']['recall']
+        test_f1_score = report_test['macro avg']['f1-score']
+
+        train_precision = report_train['macro avg']['precision']
+        train_recall = report_train['macro avg']['recall']
+        train_f1_score = report_train['macro avg']['f1-score']
+
+        print(f'Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.5f}, Test Loss: {test_loss:.5f}, Test Accuracy: {test_accuracy:.5f}, Test Precision: {test_precision:.5f}, Test Recall: {test_recall:.5f}, Test F1-Score: {test_f1_score:.5f}, Train Accuracy: {train_accuracy:.5f}, Train Precision: {train_precision:.5f}, Train Recall: {train_recall:.5f}, Train F1-Score: {train_f1_score:.5f}, Confusion Matrix Test: {cm_test}, Confusion Matrix Train: {cm_train}')
+
+        cm_test = str(cm_test).replace('\n', ' ')
+        cm_train = str(cm_train).replace('\n', ' ')
+
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([epoch+1, train_loss, valid_loss, test_loss, accuracy, precision,
-                            recall, f1_score, cm.tolist(), report])
+            writer.writerow([epoch+1, train_loss, test_loss,
+                            test_accuracy, test_precision, test_recall, test_f1_score,
+                            train_accuracy, train_precision, train_recall, train_f1_score,
+                            cm_test, cm_train])
 
 
 # Call to train_model
-train_model(model, criterion, optimizer, train_loader, valid_loader, test_loader, epochs=70)
+train_model(model, criterion, optimizer, train_loader, valid_loader, test_loader, epochs=50)
 
 
 torch.save(model.state_dict(), 'mobilenet_v2_chicken_gender.pth')
