@@ -58,7 +58,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
         writer.writerow(['Epoch', 'Train Loss', 'Test Loss',
                         'Test Accuracy', 'Test Precision', 'Test Recall', 'Test F1-Score',
                         'Train Accuracy', 'Train Precision', 'Train Recall', 'Train F1-Score',
-                        'Confusion Matrix', 'Classification Report'])
+                        'Confusion Matrix'])
 
     for epoch in range(epochs):
         model.train()
@@ -141,7 +141,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
             writer.writerow([epoch+1, train_loss, test_loss,
                             test_accuracy, test_precision, test_recall, test_f1_score,
                             train_accuracy, train_precision, train_recall, train_f1_score,
-                            cm_test, cm_train])
+                            cm_test])
 
 
 
