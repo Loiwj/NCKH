@@ -6,7 +6,7 @@ from PIL import Image
 import os
 import csv
 from sklearn.metrics import confusion_matrix, classification_report
-
+from torchsummary import summary
 
 class ChickenDataset(Dataset):
     def __init__(self, image_dir, transform=None):
@@ -44,6 +44,11 @@ test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 model = mobilenet_v2(pretrained=True)
 model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, 2)
+
+
+
+# Print model summary
+summary(model, (3, 224, 224))
 
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -146,6 +151,6 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs=2
 
 
 # Call to train_model
-train_model(model, criterion, optimizer, train_loader, test_loader, epochs=50)
+train_model(model, criterion, optimizer, train_loader, test_loader, epochs=1)
 
 torch.save(model.state_dict(), 'mobilenet_v2_chicken_gender.pth')

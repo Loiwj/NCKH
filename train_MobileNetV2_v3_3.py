@@ -70,7 +70,7 @@ model = mobilenet_v2(pretrained=True)
 model.classifier = torch.nn.Sequential(
     torch.nn.Linear(model.classifier[1].in_features, 512),
     torch.nn.ReLU(),
-    torch.nn.Dropout(0.5),
+    torch.nn.Dropout(0.2),
     torch.nn.Linear(512, 2)
 )
 
