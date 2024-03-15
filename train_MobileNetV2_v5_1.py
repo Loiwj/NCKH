@@ -166,7 +166,8 @@ for fold, (train_index, test_index) in enumerate(kf.split(image_paths)):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
     # Train the model
-    train_model(model, criterion, optimizer, train_loader_fold, test_loader_fold, epochs=50)
+    log_file = f'training_log_fold_{fold+1}.csv'  # Change log file name for each fold
+    train_model(model, criterion, optimizer, train_loader_fold, test_loader_fold, epochs=50, log_file=log_file)
     
     # Evaluate the model on the test fold
     model.eval()
