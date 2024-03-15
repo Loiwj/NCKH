@@ -10,22 +10,18 @@ from sklearn.model_selection import KFold
 
 # Define dataset class
 class ChickenDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, image_paths, transform=None):
         self.transform = transform
         self.image_paths = []
         self.labels = []
 
-        image_dir = os.path.join(root_dir, 'images')
-        label_dir = os.path.join(root_dir, 'labels')
-
-        for label_name in os.listdir(label_dir):
-            label_path = os.path.join(label_dir, label_name)
+        for image_path in image_paths:
+            self.image_paths.append(image_path)
+            label_path = image_path.replace('images', 'labels').replace('.jpg', '.txt')
             with open(label_path, 'r') as file:
                 label = [float(x) for x in file.read().strip().split()]
             if label:
                 self.labels.append(label[0])
-                image_path = os.path.join(image_dir, label_name.replace('.txt', '.jpg'))
-                self.image_paths.append(image_path)
 
     def __len__(self):
         return len(self.image_paths)
