@@ -7,7 +7,7 @@ import os
 import csv
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.model_selection import KFold
-from torchsummary import summary
+
 
 # Define dataset class
 class ChickenDataset(Dataset):
