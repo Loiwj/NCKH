@@ -16,12 +16,15 @@ class ChickenDataset(Dataset):
         self.labels = []
 
         for image_path in image_paths:
-            self.image_paths.append(image_path)
             label_path = image_path.replace('images', 'labels').replace('.jpg', '.txt')
-            with open(label_path, 'r') as file:
-                label = [float(x) for x in file.read().strip().split()]
-            if label:
-                self.labels.append(label[0])
+            try:
+                with open(label_path, 'r') as file:
+                    label = [float(x) for x in file.read().strip().split()]
+                if label:
+                    self.image_paths.append(image_path)
+                    self.labels.append(label[0])
+            except FileNotFoundError:
+                print(f"Label file not found for image: {image_path}")
 
     def __len__(self):
         return len(self.image_paths)
