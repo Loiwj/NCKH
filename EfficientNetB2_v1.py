@@ -1,15 +1,17 @@
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.applications import EfficientNetB0
+from tensorflow.keras.applications import EfficientNetB2
 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
+import datetime
 import pandas as pd
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from PIL import Image
 import numpy as np
@@ -25,13 +27,10 @@ from sklearn.metrics import (
 )
 
 
-def preprocess_image(image_path, target_size=(224, 224)):
+def preprocess_image(image_path, target_size=(260, 260)):  # Thay đổi kích thước này
     image = Image.open(image_path)
-
     image = image.resize(target_size)
-
     image_array = np.array(image)
-
     image_array = image_array.astype("float32") / 255.0
     return image_array
 
@@ -47,9 +46,9 @@ num_classes = len(class_names)
 inputs = []
 targets = []
 
-IMG_SIZE = (224, 224)
+IMG_SIZE = (260, 260)
 BATCH_SIZE = 16
-NUM_CLASSES = 2
+NUM_CLASSES = 5
 EPOCHS = 50
 for class_index, class_name in enumerate(class_names):
     class_dir = os.path.join(data_dir, class_name)
@@ -71,8 +70,8 @@ loss_per_fold = []
 
 
 def build_model():
-    base_model = EfficientNetB0(  # Sử dụng EfficientNetB0 thay vì MobileNetV2
-        weights="imagenet", include_top=False, input_shape=(*IMG_SIZE, 3)
+    base_model = EfficientNetB2(  # Thay đổi này
+        weights="imagenet", include_top=False, input_shape=(260, 260, 3)  # Thay đổi này
     )
 
     for layer in base_model.layers:
@@ -115,7 +114,7 @@ def build_model():
 targets_one_hot = to_categorical(targets, num_classes)
 
 checkpoint = ModelCheckpoint(
-    "best_model_EfficientNetB0_v1_tangcuong.keras",
+    "best_model_EfficientNetB2_v1_tangcuong.keras",
     monitor="val_accuracy",
     verbose=1,
     save_best_only=True,
@@ -190,11 +189,11 @@ for fold_no, (train_indices, test_indices) in enumerate(
     print(confusion_matrix_train_before_augmentation)
     # Khởi tạo MetricsLogger mới cho mỗi fold
     metrics_logger = MetricsLogger(
-        f"metrics_EfficientNetB0_v1_tangcuong_fold_{fold_no}.log",
+        f"metrics_EfficientNetB2_v1_tangcuong_fold_{fold_no}.log",
         X_val,
         y_val,
         fold_no,
-        f"confusion_matrix_EfficientNetB0_v1_tangcuong",
+        f"confusion_matrix_EfficientNetB2_v1_tangcuong",
     )
     # Khởi tạo ImageDataGenerator để áp dụng tăng cường dữ liệu cho tập huấn luyện của fold hiện tại
     train_datagen = ImageDataGenerator(
@@ -256,5 +255,5 @@ for fold_no, (train_indices, test_indices) in enumerate(
         targets[test_indices],
         y_pred,
         class_names,
-        f"classification_report_EfficientNetB0_v1_tangcuong.txt",
+        f"classification_report_EfficientNetB2_v1_tangcuong.txt",
     )
