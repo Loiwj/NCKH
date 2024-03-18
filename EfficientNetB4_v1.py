@@ -118,6 +118,13 @@ checkpoint = ModelCheckpoint(
     mode="max",
 )
 
+
+
+
+
+
+# Now you can create instances of MetricsLogger
+metrics_loggers = [MetricsLogger(log_file, fold_no) for fold_no, log_file in enumerate(metrics_log_files, 1)]
 class MetricsLogger(Callback):
     def __init__(self, log_file, fold_no):
         super().__init__()
