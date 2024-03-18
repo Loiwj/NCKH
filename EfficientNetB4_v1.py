@@ -117,24 +117,18 @@ class MetricsLogger(Callback):
         self.fold_no = fold_no
         self.header_written = False
 
-    def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
+    def save_confusion_matrix_append(self, y_true, y_pred, class_names, file_path):
         cm = confusion_matrix(y_true, y_pred)
         df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
         with open(file_path, "a") as f:
             df_cm.to_csv(f, sep="\t", mode="a")
 
-    def save_classification_report(y_true, y_pred, class_names, file_path):
+    def save_classification_report(self, y_true, y_pred, class_names, file_path):
         report = classification_report(y_true, y_pred, target_names=class_names)
         with open(file_path, "a") as f:
             f.write(report)
 
-    def on_epoch_end(self, epoch, logs=None, y_true=None, y_pred=None, class_names=None):
-        def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
-            cm = confusion_matrix(y_true, y_pred)
-            df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-            with open(file_path, "a") as f:
-                df_cm.to_csv(f, sep="\t", mode="a")
-
+    def on_epoch_end(self, epoch, logs=None, y_true=None, y_pred=None, class_names=None, confusion_matrix_file=None):
         with open(self.log_file, "a") as f:
             if not self.header_written:
                 f.write(
@@ -145,11 +139,21 @@ class MetricsLogger(Callback):
                 f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\n"
             )
 
-        confusion_matrix_file = f"confusion_matrix_fold{self.fold_no}.txt"
-        save_confusion_matrix_append(y_true, y_pred, class_names, confusion_matrix_file)
+        self.save_confusion_matrix_append(y_true, y_pred, class_names, confusion_matrix_file)
 
     def on_train_end(self, logs=None):
         print(f"Confusion matrix for fold {self.fold_no} has been saved.")
+
+    def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
+        cm = confusion_matrix(y_true, y_pred)
+        df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
+        with open(file_path, "a") as f:
+            df_cm.to_csv(f, sep="\t", mode="a")
+
+    def save_classification_report(y_true, y_pred, class_names, file_path):
+        report = classification_report(y_true, y_pred, target_names=class_names)
+        with open(file_path, "a") as f:
+            f.write(report)
 
 # Now you can create instances of MetricsLogger
 metrics_loggers = [MetricsLogger(log_file, fold_no) for fold_no, log_file in enumerate(metrics_log_files, 1)]
@@ -186,20 +190,20 @@ for fold_no, (train_indices, test_indices) in enumerate(kfold.split(inputs, targ
     train_generator = train_datagen.flow(X_train, y_train, batch_size=BATCH_SIZE)
 
     history = model.fit(
-        train_generator,
-        steps_per_epoch=len(X_train) // BATCH_SIZE,
-        epochs=EPOCHS,
-        verbose=1,
-        callbacks=[checkpoint, metrics_logger],
-        validation_data=(X_val, y_val),
-    )
+    train_generator,
+    steps_per_epoch=len(X_train) // BATCH_SIZE,
+    epochs=EPOCHS,
+    verbose=1,
+    callbacks=[checkpoint, metrics_logger],
+    validation_data=(X_val, y_val),
+)
 
-    def save_classification_report(y_true, y_pred, class_names, file_path):
+    def save_classification_report(self, y_true, y_pred, class_names, file_path):
         report = classification_report(y_true, y_pred, target_names=class_names)
         with open(file_path, "a") as f:
             f.write(report)
 
-    scores = model.evaluate(inputs[test_indices], targets_one_hot[test_indices], verbose=1)
+    scores = model.evaluate(X_val, y_val, verbose=1)
     print(
         f"Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1]*100}%"
     )
