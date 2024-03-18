@@ -128,12 +128,6 @@ class MetricsLogger(Callback):
         with open(file_path, "a") as f:
             f.write(report)
 
-    def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
-        cm = confusion_matrix(y_true, y_pred)
-        df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-        with open(file_path, "a") as f:
-            df_cm.to_csv(f, sep="\t", mode="a")
-
     def on_epoch_end(self, epoch, logs=None, y_true=None, y_pred=None, class_names=None):
         def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
             cm = confusion_matrix(y_true, y_pred)
@@ -156,17 +150,6 @@ class MetricsLogger(Callback):
 
     def on_train_end(self, logs=None):
         print(f"Confusion matrix for fold {self.fold_no} has been saved.")
-
-    def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
-        cm = confusion_matrix(y_true, y_pred)
-        df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-        with open(file_path, "a") as f:
-            df_cm.to_csv(f, sep="\t", mode="a")
-
-    def save_classification_report(y_true, y_pred, class_names, file_path):
-        report = classification_report(y_true, y_pred, target_names=class_names)
-        with open(file_path, "a") as f:
-            f.write(report)
 
 # Now you can create instances of MetricsLogger
 metrics_loggers = [MetricsLogger(log_file, fold_no) for fold_no, log_file in enumerate(metrics_log_files, 1)]
