@@ -129,21 +129,23 @@ class MetricsLogger(Callback):
         with open(file_path, "a") as f:
             f.write(report)
 
-    def on_epoch_end(self, epoch, logs=None, y_true=None, y_pred=None, class_names=None):
-        with open(self.log_file, "a") as f:
-            if not self.header_written:
-                f.write(
-                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_MCC\tvalid_CMC\tvalid_F1-Score\n"
-                )
-                self.header_written = True
+def on_epoch_end(self, epoch, logs=None):
+    y_pred = self.model.predict(X_val)
+    y_pred = np.argmax(y_pred, axis=1)
+    y_true = np.argmax(y_val, axis=1)
+
+    with open(self.log_file, "a") as f:
+        if not self.header_written:
             f.write(
-                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\n"
+                "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_MCC\tvalid_CMC\tvalid_F1-Score\n"
             )
+            self.header_written = True
+        f.write(
+            f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\n"
+        )
 
-        self.save_confusion_matrix_append(y_true, y_pred, class_names)
-
-
-        print(f"Confusion matrix for fold {self.fold_no} has been saved.")
+    self.save_confusion_matrix_append(y_true, y_pred, class_names)
+    print(f"Confusion matrix for fold {self.fold_no} has been saved.")
 
     def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
         cm = confusion_matrix(y_true, y_pred)
