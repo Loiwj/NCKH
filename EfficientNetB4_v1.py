@@ -215,7 +215,7 @@ for fold_no, (train_indices, test_indices) in enumerate(kfold.split(inputs, targ
     y_pred = model.predict(inputs[test_indices])
     y_pred = np.argmax(y_pred, axis=1)
 
-    save_classification_report(
+    metrics_logger.save_classification_report(
         targets[test_indices],
         y_pred,
         class_names,
