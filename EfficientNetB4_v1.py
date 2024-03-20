@@ -111,16 +111,17 @@ metrics_log_files = [f"metrics_EfficientNetB4_v1_tangcuong_fold_{i}.log" for i i
 
 # Now you can define MetricsLogger class
 class MetricsLogger(Callback):
-    def __init__(self, log_file, fold_no):
+    def __init__(self, log_file, fold_no, confusion_matrix_file):
         super().__init__()
         self.log_file = log_file
         self.fold_no = fold_no
+        self.confusion_matrix_file = confusion_matrix_file
         self.header_written = False
 
-    def save_confusion_matrix_append(self, y_true, y_pred, class_names, file_path):
+    def save_confusion_matrix_append(self, y_true, y_pred, class_names):
         cm = confusion_matrix(y_true, y_pred)
         df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-        with open(file_path, "a") as f:
+        with open(self.confusion_matrix_file, "a") as f:
             df_cm.to_csv(f, sep="\t", mode="a")
 
     def save_classification_report(self, y_true, y_pred, class_names, file_path):
@@ -156,7 +157,8 @@ class MetricsLogger(Callback):
             f.write(report)
 
 # Now you can create instances of MetricsLogger
-metrics_loggers = [MetricsLogger(log_file, fold_no) for fold_no, log_file in enumerate(metrics_log_files, 1)]
+confusion_matrix_file = "confusion_matrix_file_path"  # Replace "confusion_matrix_file_path" with the actual file path
+metrics_loggers = [MetricsLogger(log_file, fold_no, confusion_matrix_file) for fold_no, log_file in enumerate(metrics_log_files, 1)]
 
 checkpoint = ModelCheckpoint(
     "best_model_EfficientNetB4_v1_tangcuong.keras",
