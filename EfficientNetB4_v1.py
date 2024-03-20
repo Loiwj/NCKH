@@ -2,15 +2,19 @@ import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications import EfficientNetB4
+
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
-from datetime import datetime
+import datetime
 import pandas as pd
-from tensorflow.keras.callbacks import Callback, ModelCheckpoint
+from tensorflow.keras.callbacks import Callback
+from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import KFold
 from PIL import Image
+import numpy as np
+
 from sklearn.metrics import (
     precision_score,
     recall_score,
@@ -21,6 +25,7 @@ from sklearn.metrics import (
     cohen_kappa_score,
 )
 
+
 def preprocess_image(image_path, target_size=(380, 380)):
     image = Image.open(image_path)
     image = image.resize(target_size)
@@ -28,22 +33,22 @@ def preprocess_image(image_path, target_size=(380, 380)):
     image_array = image_array.astype("float32") / 255.0
     return image_array
 
-# Directory containing the data
-data_dir = "./Detect_chicken_sex_V3"
 
-# List of class names (directory names in data_dir)
+# Thư mục chứa dữ liệu
+data_dir = "./Guava Dataset/"
+
+# List các tên lớp (tên thư mục trong data_dir)
 class_names = os.listdir(data_dir)
 num_classes = len(class_names)
 
-# Load data from directories
+# Load dữ liệu từ thư mục
 inputs = []
 targets = []
 
 IMG_SIZE = (380, 380)
 BATCH_SIZE = 16
-NUM_CLASSES = 2
-EPOCHS = 50
-
+NUM_CLASSES = 5
+EPOCHS = 100
 for class_index, class_name in enumerate(class_names):
     class_dir = os.path.join(data_dir, class_name)
     for image_name in os.listdir(class_dir):
@@ -54,15 +59,17 @@ for class_index, class_name in enumerate(class_names):
 inputs = np.array(inputs)
 targets = np.array(targets)
 
-# Define K-fold Cross Validation parameters
+
+# Định nghĩa các tham số của K-fold Cross Validation
 num_folds = 5
 kfold = KFold(n_splits=num_folds, shuffle=True)
 fold_no = 1
 acc_per_fold = []
 loss_per_fold = []
 
+
 def build_model():
-    base_model = EfficientNetB4(
+    base_model = EfficientNetB4(  # Sử dụng EfficientNetB3
         weights="imagenet",
         include_top=False,
         input_shape=(380, 380, 3),
@@ -103,64 +110,9 @@ def build_model():
 
     return model
 
-# Convert labels to one-hot encoding
+
+# Chuyển đổi nhãn thành one-hot encoding
 targets_one_hot = to_categorical(targets, num_classes)
-
-# For each fold, create a new log file
-metrics_log_files = [f"metrics_EfficientNetB4_v1_tangcuong_fold_{i}.log" for i in range(1, num_folds + 1)]
-
-# Now you can define MetricsLogger class
-class MetricsLogger(Callback):
-    def __init__(self, log_file, fold_no, confusion_matrix_file):
-        super().__init__()
-        self.log_file = log_file
-        self.fold_no = fold_no
-        self.confusion_matrix_file = confusion_matrix_file
-        self.header_written = False
-
-    def save_confusion_matrix_append(self, y_true, y_pred, class_names):
-        cm = confusion_matrix(y_true, y_pred)
-        df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-        with open(self.confusion_matrix_file, "a") as f:
-            df_cm.to_csv(f, sep="\t", mode="a")
-
-    def save_classification_report(self, y_true, y_pred, class_names, file_path):
-        report = classification_report(y_true, y_pred, target_names=class_names)
-        with open(file_path, "a") as f:
-            f.write(report)
-
-def on_epoch_end(self, epoch, logs=None):
-    y_pred = self.model.predict(X_val)
-    y_pred = np.argmax(y_pred, axis=1)
-    y_true = np.argmax(y_val, axis=1)
-
-    with open(self.log_file, "a") as f:
-        if not self.header_written:
-            f.write(
-                "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_MCC\tvalid_CMC\tvalid_F1-Score\n"
-            )
-            self.header_written = True
-        f.write(
-            f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\n"
-        )
-
-    self.save_confusion_matrix_append(y_true, y_pred, class_names)
-    print(f"Confusion matrix for fold {self.fold_no} has been saved.")
-
-    def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
-        cm = confusion_matrix(y_true, y_pred)
-        df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
-        with open(file_path, "a") as f:
-            df_cm.to_csv(f, sep="\t", mode="a")
-
-    def save_classification_report(y_true, y_pred, class_names, file_path):
-        report = classification_report(y_true, y_pred, target_names=class_names)
-        with open(file_path, "a") as f:
-            f.write(report)
-
-# Now you can create instances of MetricsLogger
-confusion_matrix_file = "confusion_matrix_file_path"  # Replace "confusion_matrix_file_path" with the actual file path
-metrics_loggers = [MetricsLogger(log_file, fold_no, confusion_matrix_file) for fold_no, log_file in enumerate(metrics_log_files, 1)]
 
 checkpoint = ModelCheckpoint(
     "best_model_EfficientNetB4_v1_tangcuong.keras",
@@ -170,16 +122,81 @@ checkpoint = ModelCheckpoint(
     mode="max",
 )
 
-for fold_no, (train_indices, test_indices) in enumerate(kfold.split(inputs, targets), 1):
+
+class MetricsLogger(Callback):
+    def __init__(self, log_file, X_val, y_val, fold_no, log_file_prefix):
+        super().__init__()
+        self.log_file = log_file
+        self.fold_no = fold_no
+        self.log_file_prefix = log_file_prefix
+        self.epoch_count = 0
+        self.X_val = X_val
+        self.y_val = y_val
+        self.header_written = False
+
+    def on_epoch_end(self, epoch, logs=None):
+        with open(self.log_file, "a") as f:
+            if not self.header_written:
+                f.write(
+                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_MCC\tvalid_CMC\tvalid_F1-Score\n"
+                )
+                self.header_written = True
+            y_true = np.argmax(self.y_val, axis=1)
+            y_pred = np.argmax(self.model.predict(self.X_val), axis=1)
+            mcc = matthews_corrcoef(y_true, y_pred)
+            cmc = cohen_kappa_score(y_true, y_pred)
+            f1 = f1_score(y_true, y_pred, average="weighted")
+            f.write(
+                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{mcc:.5f}\t{cmc:.5f}\t{f1:.5f}\n"
+            )
+
+        confusion_matrix_file = f"{self.log_file_prefix}_fold{self.fold_no}.txt"
+        save_confusion_matrix_append(y_true, y_pred, class_names, confusion_matrix_file)
+
+    def on_train_end(self, logs=None):
+        print(f"Confusion matrix for fold {self.fold_no} has been saved.")
+
+
+def save_confusion_matrix_append(y_true, y_pred, class_names, file_path):
+    cm = confusion_matrix(y_true, y_pred)
+    df_cm = pd.DataFrame(cm, index=class_names, columns=class_names)
+    with open(file_path, "a") as f:
+        df_cm.to_csv(f, sep="\t", mode="a")
+
+
+def save_classification_report(y_true, y_pred, class_names, file_path):
+    report = classification_report(y_true, y_pred, target_names=class_names)
+    with open(file_path, "a") as f:
+        f.write(report)
+
+
+for fold_no, (train_indices, test_indices) in enumerate(
+    kfold.split(inputs, targets), 1
+):
     X_train, X_val = inputs[train_indices], inputs[test_indices]
     y_train, y_val = targets_one_hot[train_indices], targets_one_hot[test_indices]
 
+    # Reset model mỗi lần chạy fold mới
     model = build_model()
     model.build((None, *IMG_SIZE, 3))
     model.summary()
-
-    metrics_logger = metrics_loggers[fold_no - 1]
-
+    # Tính toán confusion matrix cho tập train trước khi tăng cường
+    y_train_pred_before_augmentation = np.argmax(model.predict(X_train), axis=1)
+    y_train_true = np.argmax(y_train, axis=1)
+    confusion_matrix_train_before_augmentation = confusion_matrix(
+        y_train_true, y_train_pred_before_augmentation
+    )
+    print("Confusion matrix for train data before augmentation:")
+    print(confusion_matrix_train_before_augmentation)
+    # Khởi tạo MetricsLogger mới cho mỗi fold
+    metrics_logger = MetricsLogger(
+        f"metrics_EfficientNetB4_v1_tangcuong_fold_{fold_no}.log",
+        X_val,
+        y_val,
+        fold_no,
+        f"confusion_matrix_EfficientNetB4_v1_tangcuong",
+    )
+    # Khởi tạo ImageDataGenerator để áp dụng tăng cường dữ liệu cho tập huấn luyện của fold hiện tại
     train_datagen = ImageDataGenerator(
         rotation_range=20,
         width_shift_range=0.2,
@@ -190,34 +207,53 @@ for fold_no, (train_indices, test_indices) in enumerate(kfold.split(inputs, targ
         horizontal_flip=False,
         fill_mode="nearest",
     )
-
+    # Tạo ra dữ liệu augmented từ dữ liệu train
     train_generator = train_datagen.flow(X_train, y_train, batch_size=BATCH_SIZE)
+    # Tính toán confusion matrix cho tập train sau khi tăng cường
+    y_train_pred_after_augmentation = np.argmax(model.predict(train_generator), axis=1)
+    confusion_matrix_train_after_augmentation = confusion_matrix(
+        y_train_true, y_train_pred_after_augmentation
+    )
+    print("Confusion matrix for train data after augmentation:")
+    print(confusion_matrix_train_after_augmentation)
 
+    # Lưu confusion matrix vào file
+    np.savetxt(
+        "confusion_matrix_train_before_augmentation.txt",
+        confusion_matrix_train_before_augmentation,
+        fmt="%d",
+        delimiter="\t",
+    )
+    np.savetxt(
+        "confusion_matrix_train_after_augmentation.txt",
+        confusion_matrix_train_after_augmentation,
+        fmt="%d",
+        delimiter="\t",
+    )
+    # Huấn luyện mô hình với dữ liệu tăng cường của fold hiện tại
     history = model.fit(
-    train_generator,
-    steps_per_epoch=len(X_train) // BATCH_SIZE,
-    epochs=EPOCHS,
-    verbose=1,
-    callbacks=[checkpoint, metrics_logger],
-    validation_data=(X_val, y_val),
-)
+        train_generator,
+        epochs=EPOCHS,
+        verbose=1,
+        callbacks=[checkpoint, metrics_logger],
+        validation_data=(X_val, y_val),
+    )
 
-    def save_classification_report(self, y_true, y_pred, class_names, file_path):
-        report = classification_report(y_true, y_pred, target_names=class_names)
-        with open(file_path, "a") as f:
-            f.write(report)
-
-    scores = model.evaluate(X_val, y_val, verbose=1)
+    # Đánh giá mô hình trên dữ liệu kiểm tra của fold hiện tại
+    scores = model.evaluate(
+        inputs[test_indices], targets_one_hot[test_indices], verbose=1
+    )
     print(
         f"Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1]*100}%"
     )
 
+    # Tính toán các metric
     y_pred = model.predict(inputs[test_indices])
     y_pred = np.argmax(y_pred, axis=1)
 
-    metrics_logger.save_classification_report(
+    save_classification_report(
         targets[test_indices],
         y_pred,
         class_names,
-        f"classification_report_EfficientNetB4_v1_tangcuong_fold_{fold_no}.txt",
+        f"classification_report_EfficientNetB4_v1_tangcuong.txt",
     )
