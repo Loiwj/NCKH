@@ -35,7 +35,7 @@ def preprocess_image(image_path, target_size=(380, 380)):
 
 
 # Thư mục chứa dữ liệu
-data_dir = "./Guava Dataset/"
+data_dir = "./Detect_chicken_sex_V3"
 
 # List các tên lớp (tên thư mục trong data_dir)
 class_names = os.listdir(data_dir)
@@ -47,8 +47,8 @@ targets = []
 
 IMG_SIZE = (380, 380)
 BATCH_SIZE = 16
-NUM_CLASSES = 5
-EPOCHS = 100
+NUM_CLASSES = 2
+EPOCHS = 50
 for class_index, class_name in enumerate(class_names):
     class_dir = os.path.join(data_dir, class_name)
     for image_name in os.listdir(class_dir):
@@ -180,14 +180,7 @@ for fold_no, (train_indices, test_indices) in enumerate(
     model = build_model()
     model.build((None, *IMG_SIZE, 3))
     model.summary()
-    # Tính toán confusion matrix cho tập train trước khi tăng cường
-    y_train_pred_before_augmentation = np.argmax(model.predict(X_train), axis=1)
-    y_train_true = np.argmax(y_train, axis=1)
-    confusion_matrix_train_before_augmentation = confusion_matrix(
-        y_train_true, y_train_pred_before_augmentation
-    )
-    print("Confusion matrix for train data before augmentation:")
-    print(confusion_matrix_train_before_augmentation)
+    
     # Khởi tạo MetricsLogger mới cho mỗi fold
     metrics_logger = MetricsLogger(
         f"metrics_EfficientNetB4_v1_tangcuong_fold_{fold_no}.log",
@@ -196,43 +189,12 @@ for fold_no, (train_indices, test_indices) in enumerate(
         fold_no,
         f"confusion_matrix_EfficientNetB4_v1_tangcuong",
     )
-    # Khởi tạo ImageDataGenerator để áp dụng tăng cường dữ liệu cho tập huấn luyện của fold hiện tại
-    train_datagen = ImageDataGenerator(
-        rotation_range=20,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
-        vertical_flip=True,
-        horizontal_flip=False,
-        fill_mode="nearest",
-    )
-    # Tạo ra dữ liệu augmented từ dữ liệu train
-    train_generator = train_datagen.flow(X_train, y_train, batch_size=BATCH_SIZE)
-    # Tính toán confusion matrix cho tập train sau khi tăng cường
-    y_train_pred_after_augmentation = np.argmax(model.predict(train_generator), axis=1)
-    confusion_matrix_train_after_augmentation = confusion_matrix(
-        y_train_true, y_train_pred_after_augmentation
-    )
-    print("Confusion matrix for train data after augmentation:")
-    print(confusion_matrix_train_after_augmentation)
-
-    # Lưu confusion matrix vào file
-    np.savetxt(
-        "confusion_matrix_train_before_augmentation.txt",
-        confusion_matrix_train_before_augmentation,
-        fmt="%d",
-        delimiter="\t",
-    )
-    np.savetxt(
-        "confusion_matrix_train_after_augmentation.txt",
-        confusion_matrix_train_after_augmentation,
-        fmt="%d",
-        delimiter="\t",
-    )
+    
+   
     # Huấn luyện mô hình với dữ liệu tăng cường của fold hiện tại
     history = model.fit(
-        train_generator,
+        X_train,
+        y_train,
         epochs=EPOCHS,
         verbose=1,
         callbacks=[checkpoint, metrics_logger],
