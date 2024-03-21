@@ -254,13 +254,5 @@ for fold_no, (train_indices, test_indices) in enumerate(
         class_names,
         f"classification_report_EfficientNetB4_v1_tangcuong.txt",
     )
-    # Giải phóng bộ nhớ của các biến không cần thiết
-    del inputs
-    del targets
-    del X_train
-    del X_val
-    del y_train
-    del y_val
-    del train_generator
-    del y_train_pred_before_augmentation
-    del y_train_pred_after_augmentation
+    # Clear the session to free up memory after each fold
+    tf.keras.backend.clear_session()
