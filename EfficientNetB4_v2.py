@@ -170,10 +170,6 @@ def save_classification_report(y_true, y_pred, class_names, file_path):
 for fold_no, (train_indices, test_indices) in enumerate(
     kfold.split(inputs, targets), 1
 ):
-    def report_gpu():
-        print(torch.cuda.list_gpu_processes())
-        gc.collect()
-        torch.cuda.empty_cache()
     X_train, X_val = inputs[train_indices], inputs[test_indices]
     y_train, y_val = targets_one_hot[train_indices], targets_one_hot[test_indices]
 
@@ -259,3 +255,13 @@ for fold_no, (train_indices, test_indices) in enumerate(
         class_names,
         f"classification_report_EfficientNetB4_v1_tangcuong.txt",
     )
+    # Giải phóng bộ nhớ của các biến không cần thiết
+    del inputs
+    del targets
+    del X_train
+    del X_val
+    del y_train
+    del y_val
+    del train_generator
+    del y_train_pred_before_augmentation
+    del y_train_pred_after_augmentation
