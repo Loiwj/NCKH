@@ -12,8 +12,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import KFold
 from PIL import Image
-import torch
-import gc
+
 
 
 from sklearn.metrics import (
