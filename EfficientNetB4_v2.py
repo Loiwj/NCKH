@@ -12,6 +12,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import KFold
 from PIL import Image
+import torch
+import gc
 
 
 from sklearn.metrics import (
@@ -168,10 +170,15 @@ def save_classification_report(y_true, y_pred, class_names, file_path):
 for fold_no, (train_indices, test_indices) in enumerate(
     kfold.split(inputs, targets), 1
 ):
+    def report_gpu():
+        print(torch.cuda.list_gpu_processes())
+        gc.collect()
+        torch.cuda.empty_cache()
     X_train, X_val = inputs[train_indices], inputs[test_indices]
     y_train, y_val = targets_one_hot[train_indices], targets_one_hot[test_indices]
 
     # Reset model mỗi lần chạy fold mới
+    
     model = build_model()
     model.build((None, *IMG_SIZE, 3))
     # model.summary()
