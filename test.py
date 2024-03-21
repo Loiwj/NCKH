@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.applications import EfficientNetB4
+from tensorflow.keras.applications import EfficientNetB3
+
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
@@ -10,9 +11,10 @@ import pandas as pd
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from PIL import Image
-
+import numpy as np
 
 from sklearn.metrics import (
     precision_score,
@@ -20,10 +22,12 @@ from sklearn.metrics import (
     f1_score,
     confusion_matrix,
     classification_report,
+    matthews_corrcoef,
+    cohen_kappa_score,
 )
 
 
-def preprocess_image(image_path, target_size=(380, 380)):
+def preprocess_image(image_path, target_size=(300, 300)):
     image = Image.open(image_path)
     image = image.resize(target_size)
     image_array = np.array(image)
@@ -42,7 +46,7 @@ num_classes = len(class_names)
 inputs = []
 targets = []
 
-IMG_SIZE = (380, 380)
+IMG_SIZE = (300, 300)
 BATCH_SIZE = 16
 NUM_CLASSES = 2
 EPOCHS = 50
@@ -66,10 +70,10 @@ loss_per_fold = []
 
 
 def build_model():
-    base_model = EfficientNetB4(  # Sử dụng EfficientNetB3
+    base_model = EfficientNetB3(  # Sử dụng EfficientNetB3
         weights="imagenet",
         include_top=False,
-        input_shape=(380, 380, 3),
+        input_shape=(300, 300, 3),
     )
 
     for layer in base_model.layers:
@@ -112,7 +116,7 @@ def build_model():
 targets_one_hot = to_categorical(targets, num_classes)
 
 checkpoint = ModelCheckpoint(
-    "best_model_EfficientNetB4_v1_tangcuong.keras",
+    "best_model_EfficientNetB3_v1_tangcuong.keras",
     monitor="val_accuracy",
     verbose=1,
     save_best_only=True,
@@ -135,14 +139,16 @@ class MetricsLogger(Callback):
         with open(self.log_file, "a") as f:
             if not self.header_written:
                 f.write(
-                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_F1-Score\n"
+                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_MCC\tvalid_CMC\tvalid_F1-Score\n"
                 )
                 self.header_written = True
             y_true = np.argmax(self.y_val, axis=1)
             y_pred = np.argmax(self.model.predict(self.X_val), axis=1)
+            mcc = matthews_corrcoef(y_true, y_pred)
+            cmc = cohen_kappa_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred, average="weighted")
             f.write(
-                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{f1:.5f}\n"
+                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{mcc:.5f}\t{cmc:.5f}\t{f1:.5f}\n"
             )
 
         confusion_matrix_file = f"{self.log_file_prefix}_fold{self.fold_no}.txt"
@@ -174,7 +180,7 @@ for fold_no, (train_indices, test_indices) in enumerate(
     # Reset model mỗi lần chạy fold mới
     model = build_model()
     model.build((None, *IMG_SIZE, 3))
-    # model.summary()
+    model.summary()
     # Tính toán confusion matrix cho tập train trước khi tăng cường
     y_train_pred_before_augmentation = np.argmax(model.predict(X_train), axis=1)
     y_train_true = np.argmax(y_train, axis=1)
@@ -185,11 +191,11 @@ for fold_no, (train_indices, test_indices) in enumerate(
     print(confusion_matrix_train_before_augmentation)
     # Khởi tạo MetricsLogger mới cho mỗi fold
     metrics_logger = MetricsLogger(
-        f"metrics_EfficientNetB4_v1_tangcuong_fold_{fold_no}.log",
+        f"metrics_EfficientNetB3_v1_tangcuong_fold_{fold_no}.log",
         X_val,
         y_val,
         fold_no,
-        f"confusion_matrix_EfficientNetB4_v1_tangcuong",
+        f"confusion_matrix_EfficientNetB3_v1_tangcuong",
     )
     # Khởi tạo ImageDataGenerator để áp dụng tăng cường dữ liệu cho tập huấn luyện của fold hiện tại
     train_datagen = ImageDataGenerator(
@@ -228,6 +234,7 @@ for fold_no, (train_indices, test_indices) in enumerate(
     # Huấn luyện mô hình với dữ liệu tăng cường của fold hiện tại
     history = model.fit(
         train_generator,
+        steps_per_epoch=len(X_train) // BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
         callbacks=[checkpoint, metrics_logger],
@@ -250,5 +257,5 @@ for fold_no, (train_indices, test_indices) in enumerate(
         targets[test_indices],
         y_pred,
         class_names,
-        f"classification_report_EfficientNetB4_v1_tangcuong.txt",
+        f"classification_report_EfficientNetB3_v1_tangcuong.txt",
     )
