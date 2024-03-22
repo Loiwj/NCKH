@@ -46,7 +46,7 @@ targets = []
 IMG_SIZE = (380, 380)
 BATCH_SIZE = 16
 NUM_CLASSES = 2
-EPOCHS = 50
+EPOCHS = 40
 for class_index, class_name in enumerate(class_names):
     class_dir = os.path.join(data_dir, class_name)
     for image_name in os.listdir(class_dir):
