@@ -115,13 +115,12 @@ def build_model():
 targets_one_hot = to_categorical(targets, num_classes)
 
 checkpoint = ModelCheckpoint(
-    "best_model_EfficientNetB4_v1_tangcuong.keras",
+    "best_model_EfficientNetB4_v1.h5",
     monitor="val_accuracy",
     verbose=1,
     save_best_only=True,
     mode="max",
 )
-
 
 class MetricsLogger(Callback):
     def __init__(self, log_file, X_val, y_val, fold_no, log_file_prefix):
@@ -138,16 +137,14 @@ class MetricsLogger(Callback):
         with open(self.log_file, "a") as f:
             if not self.header_written:
                 f.write(
-                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_MCC\tvalid_CMC\tvalid_F1-Score\n"
+                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_F1-Score\n"
                 )
                 self.header_written = True
             y_true = np.argmax(self.y_val, axis=1)
             y_pred = np.argmax(self.model.predict(self.X_val), axis=1)
-            mcc = matthews_corrcoef(y_true, y_pred)
-            cmc = cohen_kappa_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred, average="weighted")
             f.write(
-                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{mcc:.5f}\t{cmc:.5f}\t{f1:.5f}\n"
+                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{f1:.5f}\n"
             )
 
         confusion_matrix_file = f"{self.log_file_prefix}_fold{self.fold_no}.txt"
