@@ -112,8 +112,9 @@ def build_model():
 # Chuyển đổi nhãn thành one-hot encoding
 targets_one_hot = to_categorical(targets, num_classes)
 
+
 checkpoint = ModelCheckpoint(
-    "best_model_EfficientNetB4_v1_tangcuong.h5",
+    "best_model_EfficientNetB4_v1_tangcuong.keras",
     monitor="val_accuracy",
     verbose=1,
     save_best_only=True,
