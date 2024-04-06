@@ -235,7 +235,6 @@ for fold_no, (train_indices, test_indices) in enumerate(
     # Huấn luyện mô hình với dữ liệu tăng cường của fold hiện tại
     history = model.fit(
         train_generator,
-        steps_per_epoch=len(X_train) // BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
         callbacks=[checkpoint, metrics_logger],

@@ -121,7 +121,6 @@ checkpoint = ModelCheckpoint(
     mode="max",
 )
 
-
 class MetricsLogger(Callback):
     def __init__(self, log_file, X_val, y_val, fold_no, log_file_prefix):
         super().__init__()
@@ -137,16 +136,14 @@ class MetricsLogger(Callback):
         with open(self.log_file, "a") as f:
             if not self.header_written:
                 f.write(
-                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_MCC\tvalid_CMC\tvalid_F1-Score\n"
+                    "Epoch\tTrain loss\tTrain accuracy\tval_loss\tval_accuracy\tval_recall\tval_precision\tvalid_F1-Score\n"
                 )
                 self.header_written = True
             y_true = np.argmax(self.y_val, axis=1)
             y_pred = np.argmax(self.model.predict(self.X_val), axis=1)
-            mcc = matthews_corrcoef(y_true, y_pred)
-            cmc = cohen_kappa_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred, average="weighted")
             f.write(
-                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{mcc:.5f}\t{cmc:.5f}\t{f1:.5f}\n"
+                f"{epoch+1}\t{logs['loss']:.5f}\t{logs['accuracy']:.5f}\t{logs['val_loss']:.5f}\t{logs['val_accuracy']:.5f}\t{logs['val_recall']:.5f}\t{logs['val_precision']:.5f}\t{f1:.5f}\n"
             )
 
         confusion_matrix_file = f"{self.log_file_prefix}_fold{self.fold_no}.txt"
@@ -176,9 +173,10 @@ for fold_no, (train_indices, test_indices) in enumerate(
     y_train, y_val = targets_one_hot[train_indices], targets_one_hot[test_indices]
 
     # Reset model mỗi lần chạy fold mới
+    
     model = build_model()
     model.build((None, *IMG_SIZE, 3))
-    model.summary()
+    # model.summary()
     # Tính toán confusion matrix cho tập train trước khi tăng cường
     y_train_pred_before_augmentation = np.argmax(model.predict(X_train), axis=1)
     y_train_true = np.argmax(y_train, axis=1)
@@ -189,11 +187,11 @@ for fold_no, (train_indices, test_indices) in enumerate(
     print(confusion_matrix_train_before_augmentation)
     # Khởi tạo MetricsLogger mới cho mỗi fold
     metrics_logger = MetricsLogger(
-        f"metrics_EfficientNetB2_v1_tangcuong_fold_{fold_no}.log",
+        f"metrics_EfficientNetB4_v1_tangcuong_fold_{fold_no}.log",
         X_val,
         y_val,
         fold_no,
-        f"confusion_matrix_EfficientNetB2_v1_tangcuong",
+        f"confusion_matrix_EfficientNetB4_v1_tangcuong",
     )
     # Khởi tạo ImageDataGenerator để áp dụng tăng cường dữ liệu cho tập huấn luyện của fold hiện tại
     train_datagen = ImageDataGenerator(
@@ -232,7 +230,6 @@ for fold_no, (train_indices, test_indices) in enumerate(
     # Huấn luyện mô hình với dữ liệu tăng cường của fold hiện tại
     history = model.fit(
         train_generator,
-        steps_per_epoch=len(X_train) // BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
         callbacks=[checkpoint, metrics_logger],
@@ -255,5 +252,7 @@ for fold_no, (train_indices, test_indices) in enumerate(
         targets[test_indices],
         y_pred,
         class_names,
-        f"classification_report_EfficientNetB2_v1_tangcuong.txt",
+        f"classification_report_EfficientNetB4_v1_tangcuong.txt",
     )
+    # Clear the session to free up memory after each fold
+    tf.keras.backend.clear_session()
