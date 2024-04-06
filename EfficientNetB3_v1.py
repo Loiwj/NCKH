@@ -190,11 +190,11 @@ for fold_no, (train_indices, test_indices) in enumerate(
     print(confusion_matrix_train_before_augmentation)
     # Khởi tạo MetricsLogger mới cho mỗi fold
     metrics_logger = MetricsLogger(
-        f"metrics_EfficientNetB4_v1_tangcuong_fold_{fold_no}.log",
+        f"metrics_EfficientNetB3_v1_tangcuong_fold_{fold_no}.log",
         X_val,
         y_val,
         fold_no,
-        f"confusion_matrix_EfficientNetB4_v1_tangcuong",
+        f"confusion_matrix_EfficientNetB3_v1_tangcuong",
     )
     # Khởi tạo ImageDataGenerator để áp dụng tăng cường dữ liệu cho tập huấn luyện của fold hiện tại
     train_datagen = ImageDataGenerator(
@@ -255,7 +255,7 @@ for fold_no, (train_indices, test_indices) in enumerate(
         targets[test_indices],
         y_pred,
         class_names,
-        f"classification_report_EfficientNetB4_v1_tangcuong.txt",
+        f"classification_report_EfficientNetB3_v1_tangcuong.txt",
     )
     # Clear the session to free up memory after each fold
     tf.keras.backend.clear_session()
