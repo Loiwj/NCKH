@@ -176,7 +176,7 @@ for fold_no, (train_indices, test_indices) in enumerate(
     
     model = build_model()
     model.build((None, *IMG_SIZE, 3))
-    # model.summary()
+    model.summary()
     # Tính toán confusion matrix cho tập train trước khi tăng cường
     y_train_pred_before_augmentation = np.argmax(model.predict(X_train), axis=1)
     y_train_true = np.argmax(y_train, axis=1)

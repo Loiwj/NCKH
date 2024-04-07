@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Given array
-array = np.array([[89 , 0], [ 1 ,99]])
+array = np.array([[102 , 2], [ 0 ,88]])
 
 # Convert the array into percentage
 array = array / array.sum(axis=1, keepdims=True)
